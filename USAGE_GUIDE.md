@@ -1,4 +1,4 @@
-# 📱 Field Operator Usage Guide
+# Field Operator Usage Guide
 ## GPS Field Logger v2.0 — Step-by-Step Instructions
 
 This guide is for **field team members** collecting data. No technical background needed.
