@@ -1,5 +1,6 @@
 # 📡 GPS Field Logger
 
+[![Hits](https://hits.dwyl.com/ShaswatiB/gps-field-logger.svg)](https://hits.dwyl.com/ShaswatiB/gps-field-logger)
 A **mobile-first, offline-capable** field data collection tool — built as a single HTML file. No installation, no server, no internet required in the field.
 
 Fully configurable: you define your own **blocks** and **measurement scenarios** at the start of each session, making it adaptable to **any field study** — GPS accuracy, soil sampling, vegetation surveys, agrivoltaics, irrigation, precision agriculture, and more.
