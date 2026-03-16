@@ -1,4 +1,4 @@
-# 📡 GPS Field Logger
+# GPS Field Logger
 
 [![Hits](https://hits.dwyl.com/ShaswatiB/gps-field-logger.svg)](https://hits.dwyl.com/ShaswatiB/gps-field-logger)
 A **mobile-first, offline-capable** field data collection tool — built as a single HTML file. No installation, no server, no internet required in the field.
@@ -9,7 +9,7 @@ Fully configurable: you define your own **blocks** and **measurement scenarios**
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 1. **Download** `gps-field-logger.html`
 2. **Open** it in any mobile browser (Chrome, Safari, Firefox)
@@ -23,7 +23,7 @@ https://ShaswatiB.github.io/gps-field-logger/gps-field-logger.html
 
 ---
 
-## 📋 What It Does
+## What It Does
 
 | Feature | Description |
 |---|---|
@@ -40,7 +40,7 @@ https://ShaswatiB.github.io/gps-field-logger/gps-field-logger.html
 
 ---
 
-## 🔧 How to Adapt to Your Study
+## How to Adapt to Your Study
 
 No code editing required! At the start of each session:
 
@@ -52,7 +52,7 @@ For researchers who want to **pre-set** scenarios/blocks or add custom fields, s
 
 ---
 
-## 📊 Data Export Format
+## Data Export Format
 
 ### CSV columns
 `Point, Block, Block_Label, Block_Notes, Visit_Order, Point_ID, Scenario, Scenario_Desc, Start_Local, Start_UTC, End_Local, End_UTC, Duration_s, Recollect_Count, Recollect_Reason`
@@ -64,7 +64,7 @@ Full session object including all metadata, weather, GPS receiver logs, scenario
 
 ---
 
-## 🌐 Usage Analytics
+## Usage Analytics
 
 GitHub automatically tracks repository views and clones. See the **[Insights → Traffic](../../graphs/traffic)** tab in this repo.
 
@@ -72,7 +72,7 @@ To track live usage of the hosted app, add a hit counter badge to this README (s
 
 ---
 
-## 🗂️ Repository Structure
+## Repository Structure
 
 ```
 gps-field-logger/
@@ -98,7 +98,7 @@ GitHub. https://github.com/ShaswatiB/gps-field-logger
 
 ---
 
-## 📬 Contact
+## Contact
 
 Questions or suggestions? Open a [GitHub Issue](../../issues).
 
