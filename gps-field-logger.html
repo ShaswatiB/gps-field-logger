@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffcc00">
+<title>GPS Field Logger v2.0</title>
+<!-- GPS Field Logger v2.0 | github.com/ShaswatiB/gps-field-logger | MIT License -->
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%; overflow: hidden;
+    background: #fff; color: #000;
+    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px; font-weight: 600;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { height: 100%; display: flex; flex-direction: column; max-width: 520px; margin: 0 auto; }
+  ::selection { background: #0055ff; color: #fff; }
+  input::placeholder, textarea::placeholder { color: #999; font-weight: 500; }
+
+  /* ── Header ── */
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-bottom: 3px solid #000; background: #ffcc00;
+    flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .session-id { font-size: 15px; color: #000; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+  .status-badge { font-size: 11px; font-weight: 900; padding: 3px 10px; border-radius: 4px; letter-spacing: 1px; border: 2px solid #000; white-space: nowrap; }
+  .save-btn { background: transparent; border: none; font-size: 22px; cursor: pointer; padding: 4px; flex-shrink: 0; }
+  .save-flash { animation: flashG 0.6s ease; }
+
+  /* ── Tabs ── */
+  .tab-bar { display: flex; border-bottom: 3px solid #000; background: #fff; flex-shrink: 0; }
+  .tab-btn {
+    flex: 1; padding: 13px 0; background: transparent; border: none;
+    border-bottom: 4px solid transparent; font-size: 14px; font-weight: 800; cursor: pointer;
+    font-family: inherit; color: #555;
+  }
+  .tab-btn.active { border-bottom-color: #0055ff; color: #0055ff; background: #eef4ff; }
+
+  /* ── Body ── */
+  .body { padding: 16px; overflow-y: auto; flex: 1; padding-bottom: 48px; background: #f5f5ef; }
+
+  /* ── Clock ── */
+  .clock-box { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; border: 3px solid #000; }
+  .clock-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .clock-label { font-size: 11px; color: #000; letter-spacing: 2px; font-weight: 900; }
+  .clock-time { font-size: 22px; font-weight: 900; color: #0055ff; font-variant-numeric: tabular-nums; }
+  .clock-date { font-size: 13px; color: #444; text-align: center; margin-top: 5px; font-weight: 700; }
+
+  /* ── Weather ── */
+  .weather-fetch-opt {
+    width: 100%; padding: 13px; background: #fff; border: 3px solid #0055ff;
+    border-radius: 10px; color: #0055ff; font-size: 15px; font-weight: 800; cursor: pointer;
+    font-family: inherit; margin-bottom: 8px; text-align: center;
+  }
+  .weather-fetch-opt:active { background: #eef4ff; }
+  .weather-fetch-opt.secondary { border: 3px dashed #888; color: #333; font-size: 14px; }
+  .manual-coords { background: #fff; border-radius: 10px; padding: 12px; margin-top: 6px; border: 2px solid #ccc; }
+  .coords-row { display: flex; gap: 6px; margin-top: 6px; }
+  .coord-input { flex: 1; padding: 10px 8px; background: #f5f5ef; border: 2px solid #888; border-radius: 8px; color: #000; font-size: 15px; font-weight: 700; font-family: inherit; outline: none; min-width: 0; }
+  .coord-input:focus { border-color: #0055ff; }
+  .coord-go { padding: 10px 14px; background: #0055ff; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 900; cursor: pointer; font-family: inherit; }
+  .weather-card { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; border: 3px solid #000; }
+  .weather-main { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .weather-temp { font-size: 28px; font-weight: 900; color: #cc5500; }
+  .weather-cond { font-size: 15px; color: #000; font-weight: 800; }
+  .weather-details { display: flex; gap: 18px; font-size: 14px; color: #222; font-weight: 700; margin-bottom: 5px; }
+  .weather-fetched { font-size: 12px; color: #666; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .retry-btn { background: #eef4ff; border: 2px solid #0055ff; color: #0055ff; cursor: pointer; font-size: 13px; padding: 3px 10px; font-family: inherit; border-radius: 6px; font-weight: 800; }
+
+  /* ── Sections / inputs ── */
+  .section { margin-bottom: 20px; }
+  .section-title { font-size: 16px; font-weight: 900; color: #000; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 3px solid #000; padding-bottom: 4px; }
+  .add-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .input { flex: 1; padding: 12px 14px; background: #fff; border: 3px solid #888; border-radius: 10px; color: #000; font-size: 15px; font-weight: 600; font-family: inherit; outline: none; }
+  .input:focus { border-color: #0055ff; }
+  .add-btn { padding: 12px 18px; background: #0055ff; color: #fff; border: none; border-radius: 10px; font-size: 20px; font-weight: 900; cursor: pointer; font-family: inherit; }
+  .empty-hint { color: #777; font-size: 14px; font-weight: 600; text-align: center; padding: 14px; }
+
+  /* ── GPS receiver cards ── */
+  .gps-card { background: #fff; border-radius: 10px; padding: 13px; margin-bottom: 10px; border: 3px solid #000; }
+  .gps-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .gps-name { font-weight: 900; font-size: 16px; color: #000; }
+  .remove-btn { background: #dd0000; border: none; color: #fff; cursor: pointer; font-size: 15px; padding: 5px 12px; border-radius: 6px; font-weight: 900; }
+  .gps-actions { display: flex; gap: 8px; }
+  .gps-btn { flex: 1; padding: 11px 6px; border: 3px solid #888; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; background: #eee; color: #222; }
+  .gps-btn.powered { background: #00aa00; border-color: #006600; color: #fff; font-weight: 900; }
+  .gps-btn.rtk { background: #0055ff; border-color: #003399; color: #fff; font-weight: 900; }
+  .gps-btn:disabled { opacity: 0.3; cursor: default; }
+  .gps-ttff { margin-top: 8px; font-size: 14px; font-weight: 900; color: #006600; text-align: center; background: #d4ffd4; padding: 7px 10px; border-radius: 8px; border: 2px solid #00aa00; }
+
+  /* ── Scenario / Block builder cards ── */
+  .def-card { background: #fff; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; border: 2px solid #ccc; display: flex; align-items: center; gap: 10px; }
+  .def-card-icon { font-size: 22px; min-width: 28px; text-align: center; cursor: pointer; }
+  .def-card-body { flex: 1; min-width: 0; }
+  .def-card-name { font-size: 15px; font-weight: 800; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .def-card-desc { font-size: 12px; color: #555; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .def-card-del { background: none; border: none; font-size: 18px; cursor: pointer; color: #cc0000; padding: 4px 6px; flex-shrink: 0; }
+
+  /* ── Settings ── */
+  .settings-grid { display: flex; flex-direction: column; gap: 12px; }
+  .setting-label { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; color: #000; }
+  .setting-input { width: 80px; padding: 9px 10px; background: #fff; border: 3px solid #000; border-radius: 8px; color: #0055ff; font-size: 19px; font-weight: 900; font-family: inherit; text-align: center; outline: none; }
+  .notes-area { width: 100%; padding: 12px 14px; background: #fff; border: 3px solid #888; border-radius: 10px; color: #000; font-size: 14px; font-weight: 500; font-family: inherit; resize: vertical; outline: none; }
+  .notes-area:focus { border-color: #0055ff; }
+
+  /* ── Begin button ── */
+  .begin-btn { width: 100%; padding: 18px; background: #00aa00; color: #fff; border: 3px solid #006600; border-radius: 12px; font-size: 18px; font-weight: 900; cursor: pointer; font-family: inherit; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .begin-btn:active { transform: scale(0.98); }
+  .hint-text { color: #666; font-size: 13px; font-weight: 600; text-align: center; padding: 10px; }
+
+  /* ── Progress / Collect ── */
+  .progress-outer { height: 12px; background: #ddd; border-radius: 6px; overflow: hidden; margin-bottom: 8px; border: 2px solid #bbb; }
+  .progress-inner { height: 100%; background: linear-gradient(90deg, #00aa00, #0055ff); border-radius: 4px; transition: width 0.4s ease; }
+  .progress-text { font-size: 14px; color: #000; font-weight: 800; text-align: center; margin-bottom: 14px; }
+
+  .current-loc { background: #fffff0; border-radius: 12px; padding: 16px; margin-bottom: 14px; border: 4px solid #cc5500; }
+  .loc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .loc-number { font-size: 20px; font-weight: 900; color: #000; }
+  .loc-status { font-size: 13px; font-weight: 900; letter-spacing: 1px; }
+  .loc-status.collecting { color: #cc5500; }
+  .loc-status.completed { color: #006600; }
+  .loc-status.pending { color: #666; }
+
+  .point-card { background: #111; border: 2px solid #FFD600; border-radius: 10px; padding: 13px; margin-bottom: 10px; }
+  .point-scenario { color: #FFD600; font-weight: 800; font-size: 17px; margin-bottom: 4px; }
+  .point-block { color: #00E5FF; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+  .point-desc { color: #ccc; font-size: 12px; margin-bottom: 8px; }
+  .point-meta { display: flex; gap: 14px; font-size: 12px; color: #aaa; flex-wrap: wrap; }
+
+  .timing-row { font-size: 14px; color: #000; font-weight: 700; padding: 3px 0; font-variant-numeric: tabular-nums; }
+  .collecting-timer { font-size: 30px; font-weight: 900; color: #cc5500; text-align: center; padding: 10px; font-variant-numeric: tabular-nums; margin-top: 8px; background: #fff8e0; border-radius: 10px; border: 3px solid #cc5500; }
+
+  .start-btn { width: 100%; padding: 17px; background: #00aa00; color: #fff; border: 3px solid #006600; border-radius: 10px; font-size: 17px; font-weight: 900; cursor: pointer; font-family: inherit; margin-top: 12px; text-transform: uppercase; }
+  .stop-btn { width: 100%; padding: 17px; background: #dd0000; color: #fff; border: 3px solid #990000; border-radius: 10px; font-size: 17px; font-weight: 900; cursor: pointer; font-family: inherit; margin-top: 12px; animation: pulse 1.5s ease infinite; text-transform: uppercase; }
+
+  .all-done { text-align: center; padding: 18px; background: #d4ffd4; border-radius: 12px; border: 4px solid #00aa00; color: #006600; font-weight: 900; font-size: 18px; margin-bottom: 14px; }
+  .export-row { display: flex; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
+  .export-btn { flex: 1; padding: 13px 8px; background: #fff; border: 3px solid #0055ff; border-radius: 10px; color: #0055ff; font-size: 14px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .complete-btn { flex: 1; padding: 13px 8px; background: #00aa00; border: 3px solid #006600; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 900; cursor: pointer; font-family: inherit; }
+
+  /* ── Timeline ── */
+  .timeline { margin-top: 14px; }
+  .tl-block-header { color: #0055ff; font-weight: 800; font-size: 13px; margin: 12px 0 4px; padding: 6px 0; border-top: 2px solid #ddd; }
+  .timeline-item { border-left: 5px solid #ccc; padding-left: 12px; padding-bottom: 10px; margin-bottom: 2px; }
+  .timeline-item.completed { border-left-color: #00aa00; }
+  .timeline-item.collecting { border-left-color: #cc5500; }
+  .timeline-item:not(.current) { opacity: 0.5; }
+  .timeline-header { display: flex; justify-content: space-between; align-items: center; }
+  .timeline-num { font-weight: 900; font-size: 14px; color: #000; }
+  .timeline-scenario { font-size: 12px; color: #333; font-weight: 700; }
+  .timeline-times { font-size: 13px; color: #333; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+  /* ── History ── */
+  .past-btn { display: block; width: 100%; padding: 13px 15px; background: #fff; border: 3px solid #ccc; border-radius: 10px; color: #000; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; margin-bottom: 8px; text-align: left; }
+  .past-btn:active { background: #f0f0e8; }
+  .discard-btn { width: 100%; padding: 13px; background: #fff; border: 3px solid #dd0000; border-radius: 10px; color: #dd0000; font-size: 14px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .detail-meta { color: #000; font-size: 14px; font-weight: 600; margin-bottom: 7px; }
+
+  /* ── Home ── */
+  .home { padding: 24px 20px; display: flex; flex-direction: column; align-items: center; padding-top: 44px; flex: 1; overflow-y: auto; background: #f5f5ef; }
+  .logo-icon { font-size: 54px; margin-bottom: 10px; }
+  .app-title { font-size: 26px; font-weight: 900; color: #000; text-align: center; }
+  .app-sub { color: #444; font-size: 13px; font-weight: 700; margin-top: 5px; text-align: center; margin-bottom: 8px; }
+  .app-links { font-size: 12px; color: #888; font-weight: 600; margin-bottom: 28px; text-align: center; }
+  .app-links a { color: #0055ff; text-decoration: none; font-weight: 700; }
+  .new-session-box { width: 100%; max-width: 360px; margin-bottom: 8px; }
+  .session-name-input { width: 100%; padding: 15px 17px; background: #fff; border: 3px solid #000; border-radius: 12px 12px 0 0; color: #000; font-size: 16px; font-weight: 700; font-family: inherit; outline: none; text-align: center; border-bottom: none; }
+  .session-name-input:focus { border-color: #0055ff; }
+  .session-name-input.input-error { border-color: #dd0000; animation: shake 0.4s ease; }
+  .new-session-btn { padding: 17px 28px; background: #0055ff; color: #fff; border: 3px solid #003399; border-radius: 0 0 12px 12px; font-size: 17px; font-weight: 900; cursor: pointer; font-family: inherit; width: 100%; text-transform: uppercase; }
+  .new-session-btn:active { background: #0044cc; }
+
+  .back-btn { background: #fff; border: 2px solid #000; color: #000; font-size: 15px; font-weight: 800; cursor: pointer; font-family: inherit; padding: 5px 12px; border-radius: 6px; }
+  .header-title { font-size: 16px; font-weight: 900; color: #000; }
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; gap: 12px; }
+
+  /* ── Emoji picker ── */
+  .emoji-picker { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; background: #fff; border: 2px solid #ccc; border-radius: 10px; margin-top: 6px; }
+  .emoji-opt { font-size: 20px; padding: 6px 8px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; }
+  .emoji-opt:hover, .emoji-opt.selected { border-color: #0055ff; background: #eef4ff; }
+
+  /* ── Re-collect modal ── */
+  .recollect-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
+  .recollect-sheet { background: #fff; width: 100%; max-width: 520px; border-radius: 16px 16px 0 0; padding: 20px; border-top: 4px solid #dd0000; }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  @keyframes flashG { 0% { color: #00aa00; } 100% { color: inherit; } }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ─────────────────────────────────────────────
+//  Storage helpers
+// ─────────────────────────────────────────────
+const Storage = {
+  get(k) { try { const v=localStorage.getItem(k); return v?JSON.parse(v):null; } catch{return null;} },
+  set(k,v) { try { localStorage.setItem(k,JSON.stringify(v)); } catch(e){console.error(e);} },
+  del(k) { try{localStorage.removeItem(k);}catch{} },
+};
+
+// ─────────────────────────────────────────────
+//  Utility
+// ─────────────────────────────────────────────
+const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const fmt   = d => { if(!d) return '—'; return new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}); };
+const fmtDate = d => new Date(d).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+const fmtUTC  = d => new Date(d).toISOString().replace('T',' ').slice(0,19)+' UTC';
+function elapsed(a,b){
+  if(!a) return '—';
+  const s=Math.floor(((b?new Date(b):new Date())-new Date(a))/1000);
+  const m=Math.floor(s/60), h=Math.floor(m/60);
+  if(h>0) return h+'h '+m%60+'m '+s%60+'s';
+  if(m>0) return m+'m '+s%60+'s';
+  return s+'s';
+}
+
+// ─────────────────────────────────────────────
+//  Randomisation engine (seeded, reproducible)
+// ─────────────────────────────────────────────
+function seededRandom(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xFFFFFFFF;
+    return (s >>> 0) / 0xFFFFFFFF;
+  };
+}
+function shuffleArray(arr, rng) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(rng() * (i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// ─────────────────────────────────────────────
+//  Schedule generation
+//  blocks: [{id, label, notes}]
+//  scenarios: [{id, label, desc, icon}]
+//  Returns one point per (block × scenario), block visit order randomised
+// ─────────────────────────────────────────────
+function generateSchedule(blocks, scenarios, seed) {
+  const rng = seededRandom(seed);
+  const blockOrder = shuffleArray([...blocks], rng);
+  const schedule = [];
+  let num = 1;
+  blockOrder.forEach(blk => {
+    const scenOrder = shuffleArray([...scenarios], rng);
+    scenOrder.forEach((sc, vi) => {
+      const pointId = blk.id.replace(/\s+/g,'_') + '_' + sc.id;
+      schedule.push({
+        number: num++,
+        block: blk.id,
+        block_label: blk.label,
+        block_notes: blk.notes || '',
+        visit_order: vi + 1,
+        scenario: sc.id,
+        scenario_label: sc.label,
+        scenario_icon: sc.icon || '📍',
+        scenario_desc: sc.desc || '',
+        point_id: pointId,
+        start_time: null,
+        end_time: null,
+        status: 'pending',
+        recollect_count: 0,
+        recollect_reason: '',
+      });
+    });
+  });
+  return schedule;
+}
+
+// ─────────────────────────────────────────────
+//  Weather
+// ─────────────────────────────────────────────
+//  Weather (universal — no hardcoded location)
+// ─────────────────────────────────────────────
+const WX_CODES = {0:"Clear",1:"Mostly Clear",2:"Partly Cloudy",3:"Overcast",45:"Foggy",48:"Rime Fog",51:"Light Drizzle",53:"Drizzle",55:"Heavy Drizzle",61:"Light Rain",63:"Rain",65:"Heavy Rain",71:"Light Snow",73:"Snow",75:"Heavy Snow",80:"Showers",95:"Thunderstorm"};
+
+async function fetchWeatherByCoords(lat, lon, locationName) {
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+    const d = await r.json(), c = d.current;
+    return { temp_f:c.temperature_2m, humidity:c.relative_humidity_2m, wind_mph:c.wind_speed_10m,
+      condition:WX_CODES[c.weather_code]||('Code '+c.weather_code),
+      lat, lon, location_name:locationName||'', fetched_at:new Date().toISOString() };
+  } catch(e) { return { error:e.message, fetched_at:new Date().toISOString() }; }
+}
+
+// Geocode a place name → array of {lat,lon,display} using Open-Meteo geocoding API
+async function geocodePlace(name) {
+  try {
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=5&language=en&format=json`);
+    const d = await r.json();
+    if (!d.results || d.results.length === 0) return { error: `No location found for "${name}"` };
+    return d.results.map(x => ({
+      lat: x.latitude, lon: x.longitude,
+      display: [x.name, x.admin1, x.country].filter(Boolean).join(', ')
+    }));
+  } catch(e) { return { error: e.message }; }
+}
+
+// ─────────────────────────────────────────────
+//  Sanitise a session so all arrays/objects exist
+//  (guards against old saved sessions or partial data)
+// ─────────────────────────────────────────────
+function sanitiseSession(s) {
+  if (!s) return s;
+  s.scenarios             = Array.isArray(s.scenarios)     ? s.scenarios     : [];
+  s.blocks                = Array.isArray(s.blocks)        ? s.blocks        : [];
+  s.locations             = Array.isArray(s.locations)     ? s.locations     : [];
+  s.gps_receivers         = Array.isArray(s.gps_receivers) ? s.gps_receivers : [];
+  s.settings              = s.settings || {};
+  s.settings.static_duration_min = s.settings.static_duration_min != null ? s.settings.static_duration_min : 5;
+  s.settings.travel_setup_min    = s.settings.travel_setup_min    != null ? s.settings.travel_setup_min    : 3;
+  s.settings.gps_height_m        = s.settings.gps_height_m        != null ? s.settings.gps_height_m        : 1.5;
+  s.settings.random_seed         = s.settings.random_seed         != null ? s.settings.random_seed         : null;
+  s.notes                        = s.notes  || '';
+  s.current_location_index       = s.current_location_index != null ? s.current_location_index : 0;
+  return s;
+}
+
+// ─────────────────────────────────────────────
+//  App state
+// ─────────────────────────────────────────────
+let state = {
+  session: null,
+  tab: 'session',
+  viewingPast: null,
+  pastKeys: Storage.get('gps_session_keys') || [],
+  _emojiFor: null,
+};
+const _saved = Storage.get('gps_active_session');
+if (_saved) state.session = sanitiseSession(_saved);
+let clockI=null, timerI=null, saveT=null;
+
+// ─────────────────────────────────────────────
+//  State helpers
+// ─────────────────────────────────────────────
+function autoSave() {
+  if(saveT) clearTimeout(saveT);
+  saveT = setTimeout(() => { if(state.session) Storage.set('gps_active_session', state.session); }, 300);
+}
+function US(fn) { state.session = sanitiseSession(fn(state.session)); autoSave(); render(); }
+
+// ─────────────────────────────────────────────
+//  Actions
+// ─────────────────────────────────────────────
+function startNewSession() {
+  const el = document.getElementById('session-name-input'), name = el?.value?.trim();
+  if(!name) { el?.focus(); el?.classList.add('input-error'); setTimeout(()=>el?.classList.remove('input-error'),1500); return; }
+  state.session = sanitiseSession({
+    id: genId(), name, status:'setup', created_at: new Date().toISOString(),
+    weather: null,
+    gps_receivers: [],
+    scenarios: [],
+    blocks: [],
+    settings: { static_duration_min:5, travel_setup_min:3, gps_height_m:1.5, random_seed:null },
+    locations: [],
+    current_location_index: 0,
+    notes: '',
+  });
+  state.tab = 'session';
+  autoSave();
+  render();
+}
+
+// ── Weather ──
+function doFetchWeather(mode) {
+  if (mode === 'gps') {
+    if (!navigator.geolocation) { US(s=>({...s,weather:{error:'Geolocation not supported by this browser'}})); return; }
+    US(s=>({...s,weather:{loading:true, loadingMsg:'Getting your location…'}}));
+    navigator.geolocation.getCurrentPosition(
+      async p => {
+        US(s=>({...s,weather:{loading:true, loadingMsg:'Fetching weather…'}}));
+        const w = await fetchWeatherByCoords(p.coords.latitude, p.coords.longitude, 'Current location');
+        US(s=>({...s,weather:w}));
+      },
+      e => {
+        const m = {1:'Location permission denied — try searching by name', 2:'Location unavailable', 3:'Timed out'};
+        US(s=>({...s,weather:{error:m[e.code]||e.message}}));
+      },
+      {enableHighAccuracy:true, timeout:12000}
+    );
+  } else if (mode === 'search') {
+    const q = document.getElementById('wx-search-input')?.value?.trim();
+    if (!q) { document.getElementById('wx-search-input')?.focus(); return; }
+    US(s=>({...s,weather:{loading:true, loadingMsg:`Searching for "${q}"…`}}));
+    geocodePlace(q).then(results => {
+      if (results.error) { US(s=>({...s,weather:{error:results.error}})); return; }
+      // Show a picker if multiple results, else auto-select the first
+      if (results.length === 1) {
+        fetchWeatherByCoords(results[0].lat, results[0].lon, results[0].display)
+          .then(w => US(s=>({...s,weather:w})));
+      } else {
+        US(s=>({...s,weather:{picking:true, picks:results}}));
+      }
+    });
+  } else if (mode === 'pick') {
+    const idx = parseInt(document.getElementById('wx-pick-select')?.value || '0');
+    const picks = state.session?.weather?.picks || [];
+    const chosen = picks[idx];
+    if (!chosen) return;
+    US(s=>({...s,weather:{loading:true, loadingMsg:`Fetching weather for ${chosen.display}…`}}));
+    fetchWeatherByCoords(chosen.lat, chosen.lon, chosen.display).then(w => US(s=>({...s,weather:w})));
+  } else if (mode === 'manual') {
+    const la = parseFloat(document.getElementById('manual-lat')?.value);
+    const lo = parseFloat(document.getElementById('manual-lon')?.value);
+    if (isNaN(la) || isNaN(lo)) { alert('Enter valid latitude and longitude'); return; }
+    US(s=>({...s,weather:{loading:true, loadingMsg:'Fetching weather…'}}));
+    fetchWeatherByCoords(la, lo, `${la.toFixed(4)}, ${lo.toFixed(4)}`)
+      .then(w => US(s=>({...s,weather:w})));
+  }
+}
+
+// ── GPS receivers ──
+function addGPS() {
+  const el=document.getElementById('gps-name-input'), n=el?.value?.trim();
+  if(!n) return;
+  US(s=>({...s,gps_receivers:[...s.gps_receivers,{id:genId(),name:n,powered_on_at:null,rtk_fixed_at:null}]}));
+  el.value='';
+}
+function removeGPS(id) { US(s=>({...s,gps_receivers:s.gps_receivers.filter(g=>g.id!==id)})); }
+function togglePower(id) { US(s=>({...s,gps_receivers:s.gps_receivers.map(g=>g.id===id?{...g,powered_on_at:g.powered_on_at?null:new Date().toISOString(),rtk_fixed_at:g.powered_on_at?null:g.rtk_fixed_at}:g)})); }
+function toggleRTK(id)   { US(s=>({...s,gps_receivers:s.gps_receivers.map(g=>g.id===id?{...g,rtk_fixed_at:g.rtk_fixed_at?null:new Date().toISOString()}:g)})); }
+
+// ── Scenarios (user-defined) ──
+function addScenario() {
+  const nameEl = document.getElementById('sc-name-input');
+  const descEl = document.getElementById('sc-desc-input');
+  const name = nameEl?.value?.trim(), desc = descEl?.value?.trim()||'';
+  if(!name) { nameEl?.focus(); return; }
+  const icon = state._pendingScenarioIcon || '📍';
+  const id = name.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').slice(0,12) || genId();
+  US(s=>({...s,scenarios:[...s.scenarios,{id,label:name,desc,icon}]}));
+  nameEl.value=''; if(descEl) descEl.value='';
+  state._pendingScenarioIcon = null;
+  render();
+}
+function removeScenario(id) { US(s=>({...s,scenarios:s.scenarios.filter(sc=>sc.id!==id)})); }
+
+// ── Blocks (user-defined) ──
+function addBlock() {
+  const nameEl = document.getElementById('blk-name-input');
+  const notesEl = document.getElementById('blk-notes-input');
+  const name = nameEl?.value?.trim(), notes = notesEl?.value?.trim()||'';
+  if(!name) { nameEl?.focus(); return; }
+  const id = 'B'+(state.session.blocks.length+1);
+  US(s=>({...s,blocks:[...s.blocks,{id,label:name,notes}]}));
+  nameEl.value=''; if(notesEl) notesEl.value='';
+  render();
+}
+function removeBlock(id) { US(s=>({...s,blocks:s.blocks.filter(b=>b.id!==id)})); }
+
+// ── Settings ──
+function updateSetting(k,v) { US(s=>({...s,settings:{...s.settings,[k]:Number(v)}})); }
+function updateNotes(v) { US(s=>({...s,notes:v})); }
+
+// ── Begin collection ──
+function beginCollection() {
+  US(s => {
+    const seed = s.settings.random_seed || Math.floor(Math.random()*999999);
+    const schedule = generateSchedule(s.blocks || [], s.scenarios || [], seed);
+    return { ...s, status:'collecting', locations:schedule, current_location_index:0, settings:{...s.settings,random_seed:seed} };
+  });
+  state.tab = 'locations';
+  render();
+}
+function regenPreview() {
+  US(s => {
+    const seed = Math.floor(Math.random()*999999);
+    const schedule = generateSchedule(s.blocks || [], s.scenarios || [], seed);
+    return { ...s, settings:{...s.settings,random_seed:seed}, _preview_schedule:schedule };
+  });
+}
+
+// ── Collection actions ──
+function startLocation(i) { US(s=>{const l=[...s.locations];l[i]={...l[i],start_time:new Date().toISOString(),status:'collecting'};return{...s,locations:l};}); }
+function endLocation(i)   { US(s=>{const l=[...s.locations];l[i]={...l[i],end_time:new Date().toISOString(),status:'completed'};const n=i+1<l.length?i+1:i;return{...s,locations:l,current_location_index:n};}); }
+
+function promptRecollect(i) { state._recollectIdx=i; state._showRecollect=true; render(); }
+function recollectLocation(i, reason) {
+  US(s=>{
+    const l=[...s.locations], prev=l[i];
+    l[i]={...prev,status:'pending',start_time:null,end_time:null,recollect_count:(prev.recollect_count||0)+1,recollect_reason:reason||prev.recollect_reason||''};
+    return {...s,locations:l,current_location_index:i};
+  });
+  state._showRecollect=false; state._recollectIdx=undefined;
+  state.tab='locations'; render();
+}
+
+// ── Session lifecycle ──
+function completeSession() {
+  const s={...state.session,status:'completed',completed_at:new Date().toISOString()};
+  Storage.set('gps_session_'+s.id,s);
+  const k=Storage.get('gps_session_keys')||[];
+  if(!k.find(x=>(typeof x==='string'?x:x.id)===s.id)) k.push({id:s.id,name:s.name||s.id,created_at:s.created_at});
+  Storage.set('gps_session_keys',k);
+  Storage.del('gps_active_session');
+  state.session=null; state.pastKeys=k; state.tab='session'; render();
+}
+function discardSession() { if(!confirm('Discard current session? This cannot be undone.')) return; Storage.del('gps_active_session'); state.session=null; render(); }
+function viewPast(id) { const s=Storage.get('gps_session_'+id); if(s){state.viewingPast=s;render();} }
+function closePast() { state.viewingPast=null; render(); }
+function forceSave() { if(state.session){Storage.set('gps_active_session',state.session);const b=document.querySelector('.save-btn');if(b){b.classList.add('save-flash');setTimeout(()=>b.classList.remove('save-flash'),600);}} }
+
+// ── Export ──
+function exportJSON(s) {
+  const b=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='gps_'+(s.name||s.id).replace(/[^a-zA-Z0-9_-]/g,'_')+'.json'; a.click();
+}
+function exportCSV(s) {
+  let c='Point,Block,Block_Label,Block_Notes,Visit_Order,Point_ID,Scenario,Scenario_Desc,Start_Local,Start_UTC,End_Local,End_UTC,Duration_s,Recollect_Count,Recollect_Reason\n';
+  s.locations.forEach(l=>{
+    const d=l.start_time&&l.end_time?Math.round((new Date(l.end_time)-new Date(l.start_time))/1000):'';
+    c+=`${l.number},"${l.block||''}","${(l.block_label||'').replace(/"/g,'""')}","${(l.block_notes||'').replace(/"/g,'""')}",${l.visit_order||''},"${l.point_id||''}","${(l.scenario_label||'').replace(/"/g,'""')}","${(l.scenario_desc||'').replace(/"/g,'""')}",${l.start_time?fmt(l.start_time):''},${l.start_time?fmtUTC(l.start_time):''},${l.end_time?fmt(l.end_time):''},${l.end_time?fmtUTC(l.end_time):''},${d},${l.recollect_count||0},"${(l.recollect_reason||'').replace(/"/g,'""')}"\n`;
+  });
+  c+='\nGPS_Receivers\nName,Powered_On_UTC,RTK_Fixed_UTC,TTFF_s\n';
+  s.gps_receivers.forEach(g=>{
+    const t=g.powered_on_at&&g.rtk_fixed_at?Math.round((new Date(g.rtk_fixed_at)-new Date(g.powered_on_at))/1000):'';
+    c+=`"${g.name}",${g.powered_on_at?fmtUTC(g.powered_on_at):''},${g.rtk_fixed_at?fmtUTC(g.rtk_fixed_at):''},${t}\n`;
+  });
+  c+=`\nScenarios\n`;
+  (s.scenarios||[]).forEach(sc=>{ c+=`"${sc.id}","${sc.label.replace(/"/g,'""')}","${(sc.desc||'').replace(/"/g,'""')}"\n`; });
+  c+=`\nBlocks\n`;
+  (s.blocks||[]).forEach(b=>{ c+=`"${b.id}","${b.label.replace(/"/g,'""')}","${(b.notes||'').replace(/"/g,'""')}"\n`; });
+  c+=`\nSession_Name,"${(s.name||'').replace(/"/g,'""')}"\nSession_ID,${s.id}\nCreated,${s.created_at}\nRandom_Seed,${s.settings.random_seed||''}\nTotal_Points,${s.locations.length}\nGPS_Height_m,${s.settings.gps_height_m}\nStatic_Duration_min,${s.settings.static_duration_min}\nTravel_Setup_min,${s.settings.travel_setup_min||3}\n`;
+  if(s.weather&&!s.weather.error) c+=`Weather,"${s.weather.temp_f}F ${s.weather.condition} H:${s.weather.humidity}% W:${s.weather.wind_mph}mph"\n`;
+  if(s.notes) c+=`Notes,"${s.notes.replace(/"/g,'""')}"\n`;
+  const b=new Blob([c],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='gps_'+(s.name||s.id).replace(/[^a-zA-Z0-9_-]/g,'_')+'.csv'; a.click();
+}
+
+// ─────────────────────────────────────────────
+//  Clocks & timers
+// ─────────────────────────────────────────────
+function sClock(){xClock();uClock();clockI=setInterval(uClock,1000);}
+function xClock(){if(clockI){clearInterval(clockI);clockI=null;}}
+function uClock(){const n=new Date(),a=document.getElementById('clock-local'),b=document.getElementById('clock-utc'),c=document.getElementById('clock-date');if(a)a.textContent=n.toLocaleTimeString();if(b)b.textContent=n.toISOString().slice(11,19);if(c)c.textContent=fmtDate(n);}
+function sTimer(){xTimer();timerI=setInterval(()=>{const s=state.session;if(!s)return;const l=s.locations[s.current_location_index];if(l&&l.status==='collecting'&&l.start_time){const a=document.getElementById('collecting-timer'),b=document.getElementById('loc-elapsed');if(a)a.textContent=elapsed(l.start_time,null);if(b)b.textContent=elapsed(l.start_time,null);}},1000);}
+function xTimer(){if(timerI){clearInterval(timerI);timerI=null;}}
+
+// ─────────────────────────────────────────────
+//  Render functions
+// ─────────────────────────────────────────────
+const EMOJI_LIST = ['📍','🌱','🌿','🌾','🌽','🌻','🌳','💧','🔥','⚡','🏔','🏕','🛰','📡','🔬','🧪','🏷','🔵','🟢','🟡','🟠','🔴','⬛','⬜','🔶','🔷','🅰','🅱','©','®'];
+
+function renderEmojiPicker(selectedEmoji, callbackCode) {
+  return `<div class="emoji-picker">${EMOJI_LIST.map(e=>`<span class="emoji-opt ${e===selectedEmoji?'selected':''}" onclick="${callbackCode}('${e}')">${e}</span>`).join('')}</div>`;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if(state.viewingPast) { rPast(app); return; }
+  if(!state.session)    { rHome(app); return; }
+  rSession(app); sClock(); sTimer();
+}
+
+function rHome(app) {
+  xClock(); xTimer();
+  const k = state.pastKeys;
+  const GITHUB_URL = 'https://github.com/ShaswatiB/gps-field-logger';
+  app.innerHTML = `
+  <div class="home">
+    <div class="logo-icon">📡</div>
+    <div class="app-title">GPS Field Logger</div>
+    <div class="app-sub">Universal Field Data Collection</div>
+    <div class="app-links">v2.0 &nbsp;·&nbsp; <a href="${GITHUB_URL}" target="_blank">GitHub ↗</a> &nbsp;·&nbsp; <a href="${GITHUB_URL}/blob/main/USAGE_GUIDE.md" target="_blank">Help ↗</a></div>
+    <div class="new-session-box">
+      <input type="text" id="session-name-input" class="session-name-input" placeholder="Session name (e.g. 2025-06-15_Field A)" onkeydown="if(event.key==='Enter')startNewSession()">
+      <button class="new-session-btn" onclick="startNewSession()">+ New Session</button>
+    </div>
+    <p style="font-size:12px;color:#aaa;font-weight:600;margin-bottom:24px;text-align:center">💡 Define your own blocks &amp; scenarios — works for any field study</p>
+    ${k.length?`<div class="section" style="width:100%;max-width:360px"><div class="section-title">📂 Past Sessions</div>${k.slice().reverse().map(x=>{const id=typeof x==='string'?x:x.id,nm=typeof x==='string'?x:x.name,dt=typeof x==='object'&&x.created_at?' · '+fmtDate(x.created_at):'';return`<button class="past-btn" onclick="viewPast('${id}')">📋 ${nm}${dt}</button>`;}).join('')}</div>`:''}
+    <div style="font-size:11px;color:#bbb;text-align:center;padding:12px;max-width:300px">⚠️ Data saved on this device only. Export CSV/JSON after every session.</div>
+  </div>`;
+}
+
+function rSession(app) {
+  const s=state.session, t=state.tab;
+  app.innerHTML = `
+  <div class="header">
+    <div class="header-left">
+      <span class="session-id">⬡ ${s.name||s.id}</span>
+      <span class="status-badge" style="background:${s.status==='collecting'?'#ffcc00':s.status==='completed'?'#00aa00':'#ddd'};color:#000">${s.status.toUpperCase()}</span>
+    </div>
+    <button class="save-btn" onclick="forceSave()">💾</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn ${t==='session'?'active':''}" onclick="state.tab='session';render()">⚙ Setup</button>
+    <button class="tab-btn ${t==='locations'?'active':''}" onclick="state.tab='locations';render()">📍 Collect</button>
+    <button class="tab-btn ${t==='history'?'active':''}" onclick="state.tab='history';render()">📂 History</button>
+  </div>
+  <div class="body">${t==='session'?rSetup(s):t==='locations'?rLocs(s):rHist()}</div>`;
+}
+
+function rSetup(s) {
+  const scenarios = s.scenarios || [];
+  const blocks    = s.blocks    || [];
+  const gpsRx     = s.gps_receivers || [];
+  const locked    = s.status !== 'setup';
+  const canBegin  = gpsRx.length > 0 && scenarios.length > 0 && blocks.length > 0 && !locked && gpsRx.some(g=>g.rtk_fixed_at);
+
+  // Schedule preview
+  let previewHtml = '';
+  if(!locked && scenarios.length > 0 && blocks.length > 0) {
+    const seed = s.settings.random_seed || 42;
+    const preview = s._preview_schedule || generateSchedule(blocks, scenarios, seed);
+    let curBlock='', rows='';
+    preview.forEach(p=>{
+      if(p.block!==curBlock){curBlock=p.block;rows+=`<div style="margin:10px 0 4px;padding:6px 8px;background:#1a1a1a;border-radius:6px;border-left:3px solid #00E5FF;color:#00E5FF;font-weight:700;font-size:13px">${p.block_label}</div>`;}
+      rows+=`<div style="padding:3px 6px;display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a;font-size:12px;color:#ddd"><span>${p.visit_order}. ${p.scenario_icon} ${p.scenario_label}</span><span style="color:#666;margin-left:8px">${p.point_id}</span></div>`;
+    });
+    previewHtml = `
+    <div style="margin-top:12px;padding:14px;background:#0d0d0d;border:2px solid #333;border-radius:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="color:#00E5FF;font-weight:700;font-size:13px">🎲 RCBD Schedule Preview</span>
+        <button onclick="regenPreview()" style="background:#FFD600;color:#000;border:none;border-radius:6px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit">↻ Re-shuffle</button>
+      </div>
+      <div style="font-size:11px;color:#888;margin-bottom:8px">Seed: ${seed} &nbsp;|&nbsp; ${blocks.length} blocks × ${scenarios.length} scenarios = <strong style="color:#FFD600">${blocks.length*scenarios.length} points</strong></div>
+      <div>${rows}</div>
+    </div>`;
+  }
+
+  return `
+  <!-- Clock -->
+  <div class="clock-box">
+    <div class="clock-row"><span class="clock-label">LOCAL</span><span class="clock-time" id="clock-local"></span></div>
+    <div class="clock-row"><span class="clock-label">UTC</span><span class="clock-time" id="clock-utc"></span></div>
+    <div class="clock-date" id="clock-date"></div>
+  </div>
+
+  <!-- Weather -->
+  ${(()=>{
+    const w = s.weather;
+    if (!w) return `
+      <div class="section"><div class="section-title">🌤 Weather</div>
+        <button class="weather-fetch-opt" onclick="doFetchWeather('gps')">📡 Use My Current Location (GPS)</button>
+        <div class="manual-coords" style="margin-top:8px">
+          <span style="font-size:12px;color:#777;font-weight:700;display:block;margin-bottom:6px">Or search by place name:</span>
+          <div class="coords-row">
+            <input type="text" id="wx-search-input" class="coord-input" placeholder="e.g. Ames Iowa, Punjab India, Nairobi Kenya" style="font-size:13px" onkeydown="if(event.key==='Enter')doFetchWeather('search')">
+            <button class="coord-go" onclick="doFetchWeather('search')">Search</button>
+          </div>
+          <details style="margin-top:8px"><summary style="font-size:12px;color:#888;cursor:pointer;font-weight:600">Enter coordinates manually</summary>
+            <div class="coords-row" style="margin-top:6px">
+              <input type="number" id="manual-lat" class="coord-input" placeholder="Lat" step="0.0001">
+              <input type="number" id="manual-lon" class="coord-input" placeholder="Lon" step="0.0001">
+              <button class="coord-go" onclick="doFetchWeather('manual')">Go</button>
+            </div>
+          </details>
+        </div>
+      </div>`;
+    if (w.loading) return `<div class="weather-card"><span style="color:#cc5500;font-weight:800">⏳ ${w.loadingMsg||'Fetching weather…'}</span></div>`;
+    if (w.picking) return `
+      <div class="section"><div class="section-title">🌤 Weather — Multiple Matches</div>
+        <div class="weather-card">
+          <div style="font-size:13px;color:#444;font-weight:700;margin-bottom:10px">Several locations matched. Select the correct one:</div>
+          <select id="wx-pick-select" class="scenario-select" style="margin-bottom:10px">
+            ${w.picks.map((p,i)=>'<option value="'+i+'">'+p.display+'</option>').join('')}
+          </select>
+          <button class="weather-fetch-opt" style="margin-bottom:0" onclick="doFetchWeather('pick')">✓ Use Selected Location</button>
+        </div>
+      </div>`;
+    if (w.error) return `
+      <div class="section"><div class="section-title">🌤 Weather</div>
+        <div class="weather-card"><span style="color:#dd0000;font-weight:800">⚠ ${w.error}</span></div>
+        <button class="weather-fetch-opt" style="margin-top:6px" onclick="US(s=>({...s,weather:null}))">↻ Try Again</button>
+      </div>`;
+    return '<div class="weather-card">'
+      + '<div class="weather-main"><span class="weather-temp">'+w.temp_f+'°F</span><span class="weather-cond">'+w.condition+'</span></div>'
+      + '<div class="weather-details"><span>💧 '+w.humidity+'%</span><span>💨 '+w.wind_mph+' mph</span></div>'
+      + '<div class="weather-fetched">'+(w.location_name?'📍 '+w.location_name+' · ':'')+fmt(w.fetched_at)+' <button class="retry-btn" onclick="US(s=>({...s,weather:null}))">↻</button></div>'
+      + '</div>';
+  })()}
+
+  <!-- GPS Receivers -->
+  <div class="section"><div class="section-title">📡 GPS Receivers</div>
+  ${!locked?`<div class="add-row"><input type="text" id="gps-name-input" class="input" placeholder="Receiver name (e.g. Swift Duro)" onkeydown="if(event.key==='Enter')addGPS()"><button class="add-btn" onclick="addGPS()">+</button></div>`:''}
+  ${gpsRx.length===0?'<p class="empty-hint">Add your GPS receivers to begin</p>':''}
+  ${gpsRx.map(g=>`
+    <div class="gps-card">
+      <div class="gps-header">
+        <span class="gps-name">${g.name}</span>
+        ${!g.powered_on_at&&!locked?`<button class="remove-btn" onclick="removeGPS('${g.id}')">✕</button>`:''}
+      </div>
+      <div class="gps-actions">
+        <button class="gps-btn ${g.powered_on_at?'powered':''}" onclick="togglePower('${g.id}')" ${locked?'disabled':''}>⏻ ${g.powered_on_at?'ON '+fmt(g.powered_on_at):'Power On'}</button>
+        <button class="gps-btn ${g.rtk_fixed_at?'rtk':''}" onclick="toggleRTK('${g.id}')" ${!g.powered_on_at||locked?'disabled':''} style="${!g.powered_on_at?'opacity:0.3':''}">🎯 ${g.rtk_fixed_at?'RTK '+fmt(g.rtk_fixed_at):'RTK Fixed'}</button>
+      </div>
+      ${g.powered_on_at&&g.rtk_fixed_at?`<div class="gps-ttff">TTFF → RTK: ${elapsed(g.powered_on_at,g.rtk_fixed_at)}</div>`:''}
+    </div>`).join('')}
+  </div>
+
+  <!-- Scenarios -->
+  <div class="section">
+    <div class="section-title">🧪 Measurement Scenarios</div>
+    <p style="font-size:12px;color:#666;margin-bottom:10px;font-weight:600">What types of points will you collect? (e.g. "Under canopy", "Open sky", "Near structure")</p>
+    ${scenarios.length===0?'<p class="empty-hint">No scenarios yet — add at least one</p>':''}
+    ${scenarios.map(sc=>`
+      <div class="def-card">
+        <span class="def-card-icon">${sc.icon||'📍'}</span>
+        <div class="def-card-body">
+          <div class="def-card-name">${sc.label}</div>
+          ${sc.desc?`<div class="def-card-desc">${sc.desc}</div>`:''}
+        </div>
+        ${!locked?`<button class="def-card-del" onclick="removeScenario('${sc.id}')">🗑</button>`:''}
+      </div>`).join('')}
+    ${!locked?`
+      <div style="background:#fff;border-radius:10px;padding:14px;border:2px solid #ccc;margin-top:8px">
+        <div style="font-size:12px;color:#555;font-weight:700;margin-bottom:8px">Add scenario:</div>
+        <div class="add-row" style="margin-bottom:8px">
+          <span style="font-size:22px;min-width:32px;text-align:center;padding-top:8px">${state._pendingScenarioIcon||'📍'}</span>
+          <input type="text" id="sc-name-input" class="input" placeholder="Scenario name *" style="flex:2" onkeydown="if(event.key==='Enter')addScenario()">
+        </div>
+        <input type="text" id="sc-desc-input" class="input" placeholder="Short description (optional)" style="width:100%;margin-bottom:8px">
+        ${renderEmojiPicker(state._pendingScenarioIcon||'📍','pickScenarioEmoji')}
+        <button onclick="addScenario()" style="margin-top:10px;width:100%;padding:12px;background:#0055ff;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit">+ Add Scenario</button>
+      </div>`:''}
+  </div>
+
+  <!-- Blocks -->
+  <div class="section">
+    <div class="section-title">🗂 Study Blocks</div>
+    <p style="font-size:12px;color:#666;margin-bottom:10px;font-weight:600">How is your field divided? (e.g. spatial zones, treatment groups, quadrants — any names you like)</p>
+    ${blocks.length===0?'<p class="empty-hint">No blocks yet — add at least one</p>':''}
+    ${blocks.map(b=>`
+      <div class="def-card">
+        <span class="def-card-icon">🗂</span>
+        <div class="def-card-body">
+          <div class="def-card-name">${b.label}</div>
+          ${b.notes?`<div class="def-card-desc">${b.notes}</div>`:''}
+        </div>
+        ${!locked?`<button class="def-card-del" onclick="removeBlock('${b.id}')">🗑</button>`:''}
+      </div>`).join('')}
+    ${!locked?`
+      <div style="background:#fff;border-radius:10px;padding:14px;border:2px solid #ccc;margin-top:8px">
+        <div style="font-size:12px;color:#555;font-weight:700;margin-bottom:8px">Add block:</div>
+        <div class="add-row" style="margin-bottom:8px">
+          <input type="text" id="blk-name-input" class="input" placeholder="Block name (e.g. North Field, Zone A)" onkeydown="if(event.key==='Enter')addBlock()">
+        </div>
+        <input type="text" id="blk-notes-input" class="input" placeholder="Notes / conditions (optional)" style="width:100%;margin-bottom:10px">
+        <button onclick="addBlock()" style="width:100%;padding:12px;background:#0055ff;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit">+ Add Block</button>
+      </div>`:''}
+  </div>
+
+  <!-- Collection Settings -->
+  <div class="section"><div class="section-title">⚙️ Collection Settings</div>
+    <div class="settings-grid">
+      <label class="setting-label">Static Duration (min) <input type="number" class="setting-input" value="${s.settings.static_duration_min}" onchange="updateSetting('static_duration_min',this.value)" min="1" ${locked?'disabled':''}></label>
+      <label class="setting-label">Travel+Setup (min) <input type="number" class="setting-input" value="${s.settings.travel_setup_min}" onchange="updateSetting('travel_setup_min',this.value)" min="0" ${locked?'disabled':''}></label>
+      <label class="setting-label">GPS Height (m) <input type="number" class="setting-input" value="${s.settings.gps_height_m}" onchange="updateSetting('gps_height_m',this.value)" min="0" step="0.1" ${locked?'disabled':''}></label>
+    </div>
+    ${!locked && blocks.length>0 && scenarios.length>0?`
+    <div style="margin-top:10px;padding:10px 14px;background:#0d0d0d;border:1px solid #333;border-radius:8px;font-size:13px;color:#aaa">
+      <span style="color:#FFD600;font-weight:700">⏱ Est. total time:</span>
+      ${blocks.length*scenarios.length} pts × ${s.settings.static_duration_min+s.settings.travel_setup_min} min =
+      <span style="color:#fff;font-weight:700">${((blocks.length*scenarios.length*(s.settings.static_duration_min+s.settings.travel_setup_min))/60).toFixed(1)} hrs</span>
+    </div>
+    ${previewHtml}`:''}
+  </div>
+
+  <!-- Field Notes -->
+  <div class="section"><div class="section-title">📝 Field Notes</div>
+    <textarea class="notes-area" rows="3" placeholder="Observer name, equipment notes, site conditions…" onchange="updateNotes(this.value)">${s.notes||''}</textarea>
+  </div>
+
+  ${canBegin?`<button class="begin-btn" onclick="beginCollection()">🚀 BEGIN DATA COLLECTION</button>`:''}
+  ${!canBegin&&!locked?`<p class="hint-text">${gpsRx.length===0?'Add GPS receivers · ':scenarios.length===0?'Add scenarios · ':blocks.length===0?'Add blocks · ':!gpsRx.some(g=>g.rtk_fixed_at)?'Achieve RTK Fixed · ':''}then Begin</p>`:''}
+  `;
+}
+
+function pickScenarioEmoji(e) { state._pendingScenarioIcon = e; render(); }
+
+function rLocs(s) {
+  if(s.status==='setup') return `<div class="empty-state"><p style="color:#666;font-size:15px;font-weight:700">Complete Setup first</p><button class="export-btn" style="margin-top:8px" onclick="state.tab='session';render()">Go to Setup →</button></div>`;
+  const ls = s.locations || [];
+  if(ls.length === 0) return `<div class="empty-state"><p style="color:#666;font-size:15px;font-weight:700">No locations generated</p><button class="export-btn" style="margin-top:8px" onclick="state.tab='session';render()">Go to Setup →</button></div>`;
+  const i = Math.min(s.current_location_index || 0, ls.length - 1);
+  const c = ls[i];
+  const dc = ls.filter(l=>l.status==='completed').length;
+  const ad = dc === ls.length && ls.length > 0;
+
+  let h=`<div class="progress-outer"><div class="progress-inner" style="width:${ls.length?((dc/ls.length)*100):0}%"></div></div><div class="progress-text">${dc} / ${ls.length} points completed</div>`;
+
+  // Re-collect modal
+  if(state._showRecollect && state._recollectIdx!==undefined) {
+    const ri=state._recollectIdx, rl=ls[ri];
+    const REASONS=['Equipment issue / receiver lost fix','Tripod bumped or disturbed','Wrong location measured','Obstructed by vehicle or person','Correction link dropped','Weather interference','Other (see field notes)'];
+    h+=`<div class="recollect-backdrop"><div class="recollect-sheet">
+      <div style="font-size:17px;font-weight:900;color:#dd0000;margin-bottom:4px">🔄 Re-collect Point #${rl.number}</div>
+      <div style="font-size:13px;color:#444;font-weight:700;margin-bottom:14px">${rl.scenario_icon} ${rl.scenario_label} — ${rl.block_label}</div>
+      <div style="font-size:13px;font-weight:800;color:#000;margin-bottom:10px">Reason for re-collection:</div>
+      ${REASONS.map(r=>`<button onclick="recollectLocation(${ri},'${r}')" style="display:block;width:100%;text-align:left;padding:11px 13px;margin-bottom:7px;background:#f5f5ef;border:2px solid #ccc;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;color:#000">${r}</button>`).join('')}
+      <button onclick="state._showRecollect=false;state._recollectIdx=undefined;render()" style="width:100%;padding:13px;margin-top:4px;background:#fff;border:3px solid #888;border-radius:10px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;color:#666">Cancel</button>
+    </div></div>`;
+  }
+
+  if(c) {
+    h+=`<div class="current-loc">
+      <div class="loc-header">
+        <span class="loc-number">Point #${c.number}</span>
+        <span class="loc-status ${c.status}">${c.status==='collecting'?'● COLLECTING':c.status==='completed'?'✓ DONE':'○ PENDING'}</span>
+      </div>
+      <div class="point-card">
+        <div class="point-scenario">${c.scenario_icon} ${c.scenario_label}</div>
+        <div class="point-block">🗂 ${c.block_label} &nbsp;·&nbsp; Visit ${c.visit_order}</div>
+        ${c.scenario_desc?`<div class="point-desc">${c.scenario_desc}</div>`:''}
+        ${c.block_notes?`<div style="color:#aaa;font-size:12px;margin-bottom:6px">📋 ${c.block_notes}</div>`:''}
+        <div class="point-meta">
+          <span>🏷 <span style="color:#fff">${c.point_id}</span></span>
+          ${c.recollect_count?`<span style="color:#ff9800">🔄 Re-collect #${c.recollect_count}</span>`:''}
+        </div>
+        ${c.recollect_reason?`<div style="color:#ff9800;font-size:12px;margin-top:6px;font-style:italic">Reason: ${c.recollect_reason}</div>`:''}
+      </div>
+      ${c.start_time?`<div class="timing-row">▶ Start: ${fmt(c.start_time)} (${fmtUTC(c.start_time)})</div>`:''}
+      ${c.end_time?`<div class="timing-row">⏹ End: ${fmt(c.end_time)} (${fmtUTC(c.end_time)})</div>`:''}
+      ${c.start_time?`<div class="timing-row">⏱ Duration: <span id="loc-elapsed">${elapsed(c.start_time,c.end_time)}</span></div>`:''}
+      ${c.status==='collecting'?`<div class="collecting-timer" id="collecting-timer">${elapsed(c.start_time,null)}</div>`:''}
+      ${c.status==='pending'?`<button class="start-btn" onclick="startLocation(${i})">▶ START COLLECTION</button>`:''}
+      ${c.status==='collecting'?`<button class="stop-btn" onclick="endLocation(${i})">⏹ END COLLECTION</button>`:''}
+      ${c.status==='completed'?`<button onclick="promptRecollect(${i})" style="width:100%;padding:13px;margin-top:10px;background:#fff3e0;border:3px solid #cc5500;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;color:#cc5500">🔄 RE-COLLECT THIS POINT</button>`:''}
+    </div>`;
+  }
+
+  if(ad) h+=`<div class="all-done">✅ All ${ls.length} points completed!</div><div class="export-row"><button class="export-btn" onclick="exportJSON(state.session)">📋 JSON</button><button class="export-btn" onclick="exportCSV(state.session)">📊 CSV</button><button class="complete-btn" onclick="completeSession()">✅ Finish</button></div>`;
+
+  // Timeline
+  h+=`<div class="timeline">`;
+  let curBlk='';
+  ls.forEach((l,j)=>{
+    if(l.block!==curBlk){curBlk=l.block;h+=`<div class="tl-block-header">🗂 ${l.block_label}</div>`;}
+    h+=`<div class="timeline-item ${l.status} ${j===i?'current':''}" style="cursor:${l.status==='completed'?'pointer':'default'}" ${l.status==='completed'?`onclick="state.session.current_location_index=${j};state._showRecollect=false;render()"`:''}>
+      <div class="timeline-header">
+        <span class="timeline-num">${l.visit_order}. ${l.scenario_icon} ${l.scenario_label}</span>
+        <span style="display:flex;align-items:center;gap:5px">
+          ${l.recollect_count?`<span style="font-size:11px;color:#ff9800;font-weight:700">🔄×${l.recollect_count}</span>`:''}
+          <span class="timeline-scenario">${l.point_id}</span>
+        </span>
+      </div>
+      ${l.start_time?`<div class="timeline-times">${fmt(l.start_time)} → ${l.end_time?fmt(l.end_time):'...'} ${l.end_time?'<span style="margin-left:6px;color:#666;font-weight:700">('+elapsed(l.start_time,l.end_time)+')</span>':''}</div>`:''}
+    </div>`;
+  });
+  h+=`</div>`;
+  h+=`<div style="margin-top:10px;padding:9px 12px;background:#f0f0e8;border-radius:8px;border:2px solid #ddd;font-size:12px;color:#666;font-weight:600">💡 Tap any <span style="color:#006600;font-weight:700">completed ✓</span> point in the timeline to review or re-collect</div>`;
+  return h;
+}
+
+function rHist() {
+  const k=state.pastKeys;
+  let h=`<div class="section"><div class="section-title">📂 Past Sessions</div>`;
+  if(!k.length) h+=`<p class="empty-hint">No completed sessions yet</p>`;
+  k.slice().reverse().forEach(x=>{const id=typeof x==='string'?x:x.id,nm=typeof x==='string'?x:x.name,dt=typeof x==='object'&&x.created_at?' · '+fmtDate(x.created_at):'';h+=`<button class="past-btn" onclick="viewPast('${id}')">📋 ${nm}${dt}</button>`;});
+  h+=`</div>`;
+  if(state.session) h+=`<div style="margin-top:20px;border-top:3px solid #ddd;padding-top:16px"><button class="discard-btn" onclick="discardSession()">🗑 Discard Current Session</button></div>`;
+  return h;
+}
+
+function rPast(app) {
+  xClock(); xTimer();
+  const s=state.viewingPast;
+  const scns=s.scenarios||[], blks=s.blocks||[];
+  app.innerHTML=`
+  <div class="header"><button class="back-btn" onclick="closePast()">← Back</button><span class="header-title">${s.name||'Session '+s.id}</span><span></span></div>
+  <div class="body">
+    <div class="section">
+      <p class="detail-meta">📅 ${fmtDate(s.created_at)} ${fmt(s.created_at)}</p>
+      ${s.weather&&!s.weather.error?`<p class="detail-meta">🌤 ${s.weather.temp_f}°F, ${s.weather.condition}, 💧${s.weather.humidity}%, 💨${s.weather.wind_mph}mph</p>`:''}
+      <p class="detail-meta">📍 ${blks.length} blocks × ${scns.length} scenarios = ${s.locations.length} pts &nbsp;|&nbsp; ⏱ ${s.settings.static_duration_min}min &nbsp;|&nbsp; 📏 ${s.settings.gps_height_m}m</p>
+    </div>
+    ${scns.length?`<div class="section"><div class="section-title">🧪 Scenarios</div>${scns.map(sc=>`<div class="def-card"><span class="def-card-icon">${sc.icon||'📍'}</span><div class="def-card-body"><div class="def-card-name">${sc.label}</div>${sc.desc?`<div class="def-card-desc">${sc.desc}</div>`:''}</div></div>`).join('')}</div>`:''}
+    ${blks.length?`<div class="section"><div class="section-title">🗂 Blocks</div>${blks.map(b=>`<div class="def-card"><span class="def-card-icon">🗂</span><div class="def-card-body"><div class="def-card-name">${b.label}</div>${b.notes?`<div class="def-card-desc">${b.notes}</div>`:''}</div></div>`).join('')}</div>`:''}
+    <div class="section"><div class="section-title">📡 GPS Receivers</div>${s.gps_receivers.map(g=>`<div class="gps-card"><div class="gps-name">${g.name}</div><div style="font-size:13px;color:#333;margin-top:4px;font-weight:600">⏻ ${fmt(g.powered_on_at)} | 🎯 ${fmt(g.rtk_fixed_at)}${g.powered_on_at&&g.rtk_fixed_at?' | TTFF: '+elapsed(g.powered_on_at,g.rtk_fixed_at):''}</div></div>`).join('')}</div>
+    <div class="section"><div class="section-title">📍 Locations — Seed: ${s.settings.random_seed||'N/A'}</div>
+    ${(()=>{let curB='';return s.locations.map(l=>{let prefix='';if(l.block&&l.block!==curB){curB=l.block;prefix=`<div class="tl-block-header">🗂 ${l.block_label}</div>`;}return prefix+`<div class="timeline-item ${l.status}" style="opacity:1"><div class="timeline-header"><span class="timeline-num">${l.visit_order}. ${l.scenario_icon||''} ${l.scenario_label||''}</span><span class="timeline-scenario">${l.point_id||''}</span></div><div class="timeline-times">${fmt(l.start_time)} → ${fmt(l.end_time)} ${l.start_time&&l.end_time?'<span style="margin-left:6px;color:#666;font-weight:700">('+elapsed(l.start_time,l.end_time)+')</span>':''}</div></div>`;}).join('');})()}
+    </div>
+    ${s.notes?`<div class="section"><div class="section-title">📝 Notes</div><p style="color:#000;font-size:14px">${s.notes}</p></div>`:''}
+    <div class="export-row"><button class="export-btn" onclick="exportJSON(state.viewingPast)">📋 JSON</button><button class="export-btn" onclick="exportCSV(state.viewingPast)">📊 CSV</button></div>
+  </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
