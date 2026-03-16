@@ -29,7 +29,7 @@ The app keeps the screen active during collection — bring a power bank for lon
 
 ---
 
-## Setup Tab (⚙ Setup)
+## Setup Tab (Setup)
 
 Complete **all steps** before beginning data collection:
 
@@ -115,7 +115,7 @@ Once GPS receivers show RTK Fixed and you have scenarios + blocks defined, the g
 
 ---
 
-## Collect Tab (📍 Collect)
+## Collect Tab (Collect)
 
 ### Working Through Points
 
@@ -135,7 +135,7 @@ To collect a point:
 6. The app automatically advances to the next point
 
 ### If You Need to Re-Collect a Point
-Tap **🔄 RE-COLLECT THIS POINT** on any completed point, select the reason. The re-collection is logged and the original timestamps are preserved.
+Tap **RE-COLLECT THIS POINT** on any completed point, select the reason. The re-collection is logged and the original timestamps are preserved.
 
 ### Progress Bar
 The bar at the top shows how many points are done out of total.
@@ -146,8 +146,8 @@ The bar at the top shows how many points are done out of total.
 
 When all points are complete, two export buttons appear:
 
-- **📋 JSON** — Full data export including all metadata (recommended for archiving)
-- **📊 CSV** — Spreadsheet-friendly format (open directly in Excel or Google Sheets)
+- **JSON** — Full data export including all metadata (recommended for archiving)
+- **CSV** — Spreadsheet-friendly format (open directly in Excel or Google Sheets)
 
 **Always export both formats** and transfer to your computer the same day.
 
@@ -155,7 +155,7 @@ When all points are complete, two export buttons appear:
 
 ## Viewing Past Sessions
 
-Tap **📂 History** to see all sessions stored on this device. You can re-export any past session at any time.
+Tap **History** to see all sessions stored on this device. You can re-export any past session at any time.
 
 > ⚠️ **Important:** Session data is stored in your phone's browser storage. Clearing browser data will erase sessions. Always export before clearing.
 
