@@ -62,13 +62,6 @@ Plus separate sections for GPS receivers, scenario definitions, block definition
 ### JSON
 Full session object including all metadata, weather, GPS receiver logs, scenario/block definitions, and all location records.
 
----
-
-## Usage Analytics
-
-GitHub automatically tracks repository views and clones. See the **[Insights → Traffic](../../graphs/traffic)** tab in this repo.
-
-To track live usage of the hosted app, add a hit counter badge to this README (see [`GITHUB_SETUP_GUIDE.md`](GITHUB_SETUP_GUIDE.md)).
 
 ---
 
