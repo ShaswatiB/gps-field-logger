@@ -3,6 +3,8 @@
 [![Hits](https://hits.dwyl.com/ShaswatiB/gps-field-logger.svg)](https://hits.dwyl.com/ShaswatiB/gps-field-logger)
 A **mobile-first, offline-capable** field data collection tool — built as a single HTML file. No installation, no server, no internet required in the field.
 
+> **What this tool does and does not do:** GPS Field Logger records *metadata about your field session* — when and where you collected, which GPS receiver you used, how long it took to achieve RTK fix, weather conditions, and your structured observation schedule. It does **not** record or stream raw GPS coordinates, NMEA sentences, or position logs. Think of it as a digital field notebook and session organiser that sits alongside your GPS receiver, not a replacement for it.
+
 Fully configurable: you define your own **blocks** and **measurement scenarios** at the start of each session, making it adaptable to **any field study** — GPS accuracy, soil sampling, vegetation surveys, agrivoltaics, irrigation, precision agriculture, and more.
 
 > **⭐ If this tool helped your research, please star this repo!**
